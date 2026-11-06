@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDS 불량율 시계열 (2026-08)</title>
+<style>
+:root{color-scheme:light;--bg:#f6f6f4;--surface:#fcfcfb;--text:#0b0b0b;--text2:#52514e;--grid:#e4e3df;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--ring:#fcfcfb;--bad:#e34948}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#111110;--surface:#1a1a19;--text:#f0efec;--text2:#c3c2b7;--grid:#34332f;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--ring:#1a1a19;--bad:#e66767}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#111110;--surface:#1a1a19;--text:#f0efec;--text2:#c3c2b7;--grid:#34332f;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--ring:#1a1a19;--bad:#e66767}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Malgun Gothic",system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--text2);margin:0 0 20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.kpi,.card{background:var(--surface);border-radius:10px;padding:14px 16px}
+.kpi b{display:block;font-size:24px}
+.kpi span{color:var(--text2);font-size:12px}
+.card{margin-bottom:20px;position:relative}
+.card h2{font-size:15px;margin:0 0 2px}
+.card p{margin:0 0 10px;color:var(--text2);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:8px;font-size:12px;color:var(--text2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.legend i.sq{border-radius:2px}
+svg{width:100%;height:auto;display:block;overflow:visible}
+svg text{fill:var(--text2);font-size:11px}
+#tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--text);border:1px solid var(--grid);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.18);display:none;z-index:9;white-space:nowrap}
+#tip b{display:block;margin-bottom:2px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap}
+th:nth-child(-n+3),td:nth-child(-n+3),th:last-child,td:last-child{text-align:left}
+th{position:sticky;top:0;background:var(--surface);color:var(--text2)}
+.tw{overflow:auto;max-height:420px}
+.bad{color:var(--bad);font-weight:700}
+.tbtn{float:right;background:none;border:1px solid var(--grid);color:var(--text2);border-radius:6px;padding:2px 10px;cursor:pointer}
+main{max-width:none;margin:0;padding:24px 0 48px;flex:1;min-width:0}
+.wrap{display:flex;gap:16px;max-width:1440px;margin:0 auto;padding:0 16px;align-items:flex-start}
+#chat{width:370px;flex:none;position:sticky;top:16px;height:calc(100vh - 32px);margin-top:24px;display:flex;flex-direction:column;background:var(--surface);border-radius:10px;overflow:hidden}
+#chat h2{font-size:15px;margin:0;padding:14px 16px 8px}
+#chat details{padding:0 16px 8px;font-size:12px;color:var(--text2)}
+#chat summary{cursor:pointer;margin-bottom:6px}
+#chat label{display:block;margin:6px 0 2px}
+#chat input,#chat textarea{width:100%;font:inherit;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--grid);border-radius:6px;padding:6px 8px}
+#msgs{flex:1;overflow:auto;padding:8px 16px;display:flex;flex-direction:column;gap:8px}
+.m{max-width:92%;padding:8px 10px;border-radius:10px;white-space:pre-wrap;word-break:break-word;font-size:13px}
+.m.u{align-self:flex-end;background:var(--s1);color:#fff}
+.m.a{align-self:flex-start;background:var(--bg)}
+.m.e{align-self:flex-start;background:none;border:1px solid var(--bad);color:var(--bad)}
+#chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 6px}
+#chips button{font:inherit;font-size:11px;background:none;border:1px solid var(--grid);color:var(--text2);border-radius:12px;padding:2px 9px;cursor:pointer}
+#cf{display:flex;gap:6px;padding:8px 16px 14px;border-top:1px solid var(--grid)}
+#cf textarea{resize:none;height:42px}
+#cf button{background:var(--s1);color:#fff;border:0;border-radius:6px;padding:0 14px;cursor:pointer;font:inherit}
+#cf button:disabled{opacity:.5;cursor:default}
+@media (max-width:900px){.wrap{flex-direction:column;align-items:stretch}#chat{width:auto;position:static;height:600px;margin:0 0 24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<main>
+<h1>EDS 불량율 시계열</h1>
+<p class="sub">2026-08 · LOT 시작일시 순 · 불량율(%) = 100 − 수율</p>
+<div class="kpis" id="kpis"></div>
+
+<section class="card">
+  <h2>LOT별 EDS 불량율 추이</h2>
+  <p>점 하나 = LOT 하나 (시작일시 기준, 시간 비례 간격)</p>
+  <div class="legend"><span><i style="background:var(--s1)"></i>고객샘플</span><span><i style="background:var(--s2)"></i>POR</span><span><i style="background:var(--bad)"></i>불량율 50% 이상</span><span><i class="sq" style="background:var(--text2);height:2px;width:14px;vertical-align:3px"></i>이동평균(3)</span></div>
+  <svg id="c1" viewBox="0 0 960 340"></svg>
+</section>
+
+<section class="card">
+  <h2>BIN별 불량율 추이</h2>
+  <p>BIN5000 ~ BIN5003 (%)</p>
+  <div class="legend" id="lg2"></div>
+  <svg id="c2" viewBox="0 0 960 340"></svg>
+</section>
+
+<section class="card">
+  <button class="tbtn" onclick="document.getElementById('tw').hidden^=1">표 보기/숨기기</button>
+  <h2>데이터 표</h2>
+  <p>시작일시 오름차순</p>
+  <div class="tw" id="tw"></div>
+</section>
+</main>
+<aside id="chat">
+  <h2>데이터 질문 챗봇</h2>
+  <details id="cfg" open>
+    <summary>API 설정 (OpenAI 호환 /chat/completions)</summary>
+    <label for="mn">model_name</label><input id="mn" autocomplete="off" placeholder="예: gpt-4o-mini">
+    <label for="bu">base_url</label><input id="bu" autocomplete="off" placeholder="예: https://api.openai.com/v1">
+    <label for="ak">api_key</label><input id="ak" type="password" autocomplete="off" placeholder="저장되지 않으며 새로고침 시 사라집니다">
+  </details>
+  <div id="msgs"><div class="m a">이 대시보드의 LOT 데이터(불량율, 수율, BIN, 작업자 등)를 근거로 답변합니다. 궁금한 점을 물어보세요.</div></div>
+  <div id="chips"></div>
+  <form id="cf"><textarea id="q" placeholder="질문 입력 (Enter 전송, Shift+Enter 줄바꿈)"></textarea><button id="sb">전송</button></form>
+</aside>
+</div>
+<div id="tip"></div>
+<script>
+const CSV=`ATT123,고객샘플,2026-08-02 0:15,2026-08-02 4:10,5.6,0.25,0.11,0.01,60,이한결
+ATT124,고객샘플,2026-08-02 9:50,2026-08-02 11:10,6.6,1.25,1.11,1.01,50,최민재
+ATT125,고객샘플,2026-08-04 3:00,2026-08-04 4:20,7.6,2.25,2.11,2.01,30,이한결
+ATT126,고객샘플,2026-08-04 13:40,2026-08-04 17:15,8.6,3.25,3.11,3.01,70,"최민재, 박서진, 한울테크(2)"
+ATT127,고객샘플,2026-08-04 13:55,2026-08-04 18:10,9.6,4.25,4.11,4.01,80,"최민재, 박서진, 한울테크(2)"
+ATT128,고객샘플,2026-08-05 13:00,2026-08-05 17:10,10.6,5.25,5.11,5.01,22,"최민재, 박서진, 한울테크(2)"
+ATT129,고객샘플,2026-08-06 3:50,2026-08-06 5:20,11.6,6.25,6.11,6.01,43,이한결
+ATT130,고객샘플,2026-08-07 14:20,2026-08-07 15:30,12.6,7.25,7.11,7.01,60,박서진
+ATT131,고객샘플,2026-08-10 4:40,2026-08-10 5:50,13.6,8.25,8.11,8.01,70,박서진
+ATT132,고객샘플,2026-08-11 14:10,2026-08-11 17:25,14.6,9.25,9.11,9.01,80,"한지우, 이한결, 한울테크(2)"
+ATT133,고객샘플,2026-08-12 5:50,2026-08-12 7:40,15.6,10.25,10.11,10.01,20,"박서진, 한지우"
+ATT134,고객샘플,2026-08-13 8:40,2026-08-13 11:30,16.6,11.25,11.11,11.01,0,"한지우, 한울테크(2)"
+ATT135,고객샘플,2026-08-13 11:40,2026-08-13 14:40,17.6,12.25,12.11,12.01,19,"한지우, 이한결, 한울테크(2)"
+ATT136,고객샘플,2026-08-15 17:30,2026-08-15 21:10,18.6,13.25,13.11,13.01,60,"이한결, 한울테크(1)"
+ATT137,고객샘플,2026-08-16 23:48,2026-08-17 0:02,19.6,14.25,14.11,14.01,88,박서진
+ATT138,고객샘플,2026-08-17 9:00,2026-08-17 9:15,20.6,15.25,15.11,15.01,89,김도윤
+ATT139,POR,2026-08-17 12:05,2026-08-17 15:40,21.6,16.25,16.11,16.01,60,"이한결, 최민재"
+ATT140,POR,2026-08-19 23:15,2026-08-20 0:30,22.6,17.25,17.11,17.01,50,한지우
+ATT141,POR,2026-08-20 9:10,2026-08-20 10:40,23.6,18.25,18.11,18.01,30,이한결
+ATT142,POR,2026-08-21 9:45,2026-08-21 12:50,24.6,19.25,19.11,19.01,20,이한결
+ATT143,POR,2026-08-22 8:50,2026-08-22 10:30,25.6,20.25,20.11,20.01,14,이한결
+ATT144,POR,2026-08-23 15:30,2026-08-23 17:30,26.6,21.25,21.11,21.01,60,최민재
+ATT145,POR,2026-08-25 10:50,2026-08-25 14:05,27.6,22.25,22.11,22.01,90,"박서진, 한울테크(2)"
+ATT146,POR,2026-08-26 1:00,2026-08-26 2:30,28.6,23.25,23.11,23.01,91,최민재
+ATT147,POR,2026-08-27 9:45,2026-08-27 11:00,29.6,24.25,24.11,24.01,92,박서진
+ATT148,POR,2026-08-28 13:20,2026-08-28 15:30,30.6,25.25,25.11,25.01,93,"박서진, 한지우"
+ATT149,POR,2026-08-29 9:10,2026-08-29 14:30,31.6,26.25,26.11,26.01,94,"박서진, 한지우, 한울테크(2)"
+ATT150,POR,2026-08-30 8:40,2026-08-30 11:20,32.6,27.25,27.11,27.01,95,박서진
+ATT151,POR,2026-08-30 9:00,2026-08-30 11:40,33.6,28.25,28.11,28.01,96,박서진
+ATT152,POR,2026-08-31 8:45,2026-08-31 11:50,34.6,29.25,29.11,29.01,97,박서진`;
+function parseLine(l){const o=[];let c="",q=false;for(const ch of l){if(ch=='"')q=!q;else if(ch==','&&!q){o.push(c);c=""}else c+=ch}o.push(c);return o}
+const rows=CSV.split("\n").map(parseLine).map(a=>({lot:a[0],kind:a[1],start:new Date(a[2].replace(" ","T").replace(/T(\d:)/,"T0$1")),end:a[3],bins:[+a[4],+a[5],+a[6],+a[7]],yield:+a[8],op:a[9],startStr:a[2]}))
+ .sort((a,b)=>a.start-b.start);
+rows.forEach(r=>r.def=100-r.yield);
+const f1=n=>n.toFixed(1), tip=document.getElementById("tip");
+const col={"고객샘플":"var(--s1)","POR":"var(--s2)"};
+const ymd=d=>`${d.getMonth()+1}/${d.getDate()}`;
+
+// KPIs
+const avg=rows.reduce((s,r)=>s+r.def,0)/rows.length, worst=rows.reduce((a,b)=>b.def>a.def?b:a);
+const avgK=k=>{const x=rows.filter(r=>r.kind==k);return x.reduce((s,r)=>s+r.def,0)/x.length};
+document.getElementById("kpis").innerHTML=[
+ ["LOT 수",rows.length+"개"],["평균 불량율",f1(avg)+"%"],
+ ["최고 불량율",f1(worst.def)+"% ("+worst.lot+")"],
+ ["고객샘플 평균",f1(avgK("고객샘플"))+"%"],["POR 평균",f1(avgK("POR"))+"%"]
+].map(([l,v])=>`<div class="kpi"><span>${l}</span><b>${v}</b></div>`).join("");
+
+function chart(svgId,series,ymax,opts={}){
+  const svg=document.getElementById(svgId),W=960,H=340,m={l:46,r:16,t:12,b:30};
+  const t0=rows[0].start.getTime(),t1=rows[rows.length-1].start.getTime();
+  const X=t=>m.l+(t-t0)/(t1-t0)*(W-m.l-m.r), Y=v=>H-m.b-v/ymax*(H-m.t-m.b);
+  let h="";
+  const step=ymax>50?20:10;
+  for(let v=0;v<=ymax;v+=step)h+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">${v}%</text>`;
+  for(let d=new Date(2026,7,2);d.getTime()<=t1;d.setDate(d.getDate()+4))h+=`<text x="${X(d.getTime())}" y="${H-8}" text-anchor="middle">${ymd(d)}</text>`;
+  if(opts.thr)h+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(50)}" y2="${Y(50)}" stroke="var(--bad)" stroke-dasharray="2 4" opacity=".7"/>`;
+  series.forEach(s=>{
+    const pts=rows.map((r,i)=>[X(r.start.getTime()),Y(s.val(r,i))]);
+    h+=`<polyline fill="none" stroke="${s.color||"var(--text2)"}" stroke-width="2" stroke-linejoin="round" ${s.dash?'stroke-dasharray="5 4"':""} points="${pts.map(p=>p.join(",")).join(" ")}"/>`;
+    if(s.dots)pts.forEach((p,i)=>h+=`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="${s.dotColor(rows[i])}" stroke="var(--ring)" stroke-width="2"/>`);
+  });
+  h+=`<line id="${svgId}x" y1="${m.t}" y2="${H-m.b}" stroke="var(--text2)" stroke-dasharray="3 3" style="display:none"/>`;
+  h+=`<rect id="${svgId}r" x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent"/>`;
+  svg.innerHTML=h;
+  const xs=rows.map(r=>X(r.start.getTime())),line=svg.querySelector("#"+svgId+"x");
+  svg.querySelector("#"+svgId+"r").addEventListener("mousemove",e=>{
+    const b=svg.getBoundingClientRect(),px=(e.clientX-b.left)*W/b.width;
+    let i=0;xs.forEach((x,j)=>{if(Math.abs(x-px)<Math.abs(xs[i]-px))i=j});
+    line.setAttribute("x1",xs[i]);line.setAttribute("x2",xs[i]);line.style.display="";
+    tip.innerHTML=opts.tip(rows[i]);tip.style.display="block";
+    tip.style.left=Math.min(e.clientX+14,innerWidth-tip.offsetWidth-8)+"px";tip.style.top=(e.clientY+14)+"px";
+  });
+  svg.querySelector("#"+svgId+"r").addEventListener("mouseleave",()=>{tip.style.display="none";line.style.display="none"});
+}
+const head=r=>`<b>${r.lot} · ${r.kind}</b>${r.startStr}`;
+chart("c1",[
+ {val:(r,i)=>{const a=rows.slice(Math.max(0,i-2),i+1);return a.reduce((s,x)=>s+x.def,0)/a.length},dash:true},
+ {val:r=>r.def,color:"var(--text2)",dots:true,dotColor:r=>r.def>=50?'var(--bad)':col[r.kind]}
+],100,{thr:1,tip:r=>`${head(r)}<br>불량율 <b style="display:inline"${r.def>=50?' class="bad"':''}>${f1(r.def)}%${r.def>=50?' ▲':''}</b> (수율 ${r.yield}%)<br>작업자 ${r.op}`});
+
+const bn=["BIN5000","BIN5001","BIN5002","BIN5003"],bc=["var(--s1)","var(--s2)","var(--s3)","var(--s4)"];
+document.getElementById("lg2").innerHTML=bn.map((n,i)=>`<span><i class="sq" style="background:${bc[i]}"></i>${n}</span>`).join("");
+chart("c2",bn.map((n,i)=>({val:r=>r.bins[i],color:bc[i]})),40,{tip:r=>`${head(r)}<br>`+bn.map((n,i)=>`<span style="color:${bc[i]}">■</span> ${n}: ${r.bins[i]}%`).join("<br>")});
+
+document.getElementById("tw").innerHTML=`<table><thead><tr><th>LOT ID</th><th>구분</th><th>시작일시</th><th>불량율(%)</th><th>수율(%)</th>${bn.map(n=>`<th>${n}</th>`).join("")}<th>작업자</th></tr></thead><tbody>`+
+ rows.map(r=>`<tr><td>${r.lot}</td><td>${r.kind}</td><td>${r.startStr}</td><td${r.def>=50?' class="bad"':''}>${f1(r.def)}${r.def>=50?' ▲':''}</td><td>${r.yield}</td>${r.bins.map(b=>`<td>${b}</td>`).join("")}<td>${r.op}</td></tr>`).join("")+"</tbody></table>";
+
+// ---- 챗봇 (키/모델/URL은 화면 입력, 코드에 없음) ----
+const $=id=>document.getElementById(id);
+try{$("mn").value=localStorage.getItem("eds_model")||"";$("bu").value=localStorage.getItem("eds_base")||""}catch(e){}
+const dataCtx=(()=>{
+  const hdr="LOT ID|구분|시작일시|종료일시|불량율(%)|수율(%)|BIN5000|BIN5001|BIN5002|BIN5003|작업자";
+  const body=rows.map(r=>[r.lot,r.kind,r.startStr,r.end,r.def,r.yield,...r.bins,r.op].join("|")).join("\n");
+  const hi=rows.filter(r=>r.def>=50).map(r=>r.lot).join(", ");
+  const sum=`[요약] LOT ${rows.length}개, 평균 불량율 ${avg.toFixed(1)}%, 고객샘플 평균 ${avgK("고객샘플").toFixed(1)}%, POR 평균 ${avgK("POR").toFixed(1)}%, 최고 ${worst.def}% (${worst.lot}), 불량율 50% 이상 LOT: ${hi}`;
+  return [sum,"[데이터: 시작일시 오름차순, 불량율=100-수율]",hdr,body].join("\n");
+})();
+const sysPrompt="당신은 EDS 불량율 대시보드의 데이터 분석 도우미입니다. 아래 제공된 데이터만 근거로 한국어로 간결하게 답하세요. 데이터에 없는 내용은 추측하지 말고 '데이터에서 확인할 수 없습니다'라고 답하세요. 답변에는 근거가 된 LOT ID와 수치를 포함하세요. 불량율은 100-수율(%)입니다.\n\n"+dataCtx;
+const hist=[];
+const add=(cls,t)=>{const d=document.createElement("div");d.className="m "+cls;d.textContent=t;$("msgs").appendChild(d);$("msgs").scrollTop=1e9;return d};
+["불량율 50% 이상인 LOT은?","고객샘플과 POR 불량율 비교","불량율이 가장 높은 작업자는?","불량율 추세 요약"].forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{$("q").value=t;$("cf").requestSubmit()};$("chips").appendChild(b)});
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("cf").requestSubmit()}});
+$("cf").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const q=$("q").value.trim();if(!q)return;
+  const model=$("mn").value.trim(),base=$("bu").value.trim().replace(/\/+$/,""),key=$("ak").value.trim();
+  if(!model||!base||!key){$("cfg").open=true;add("e","model_name, base_url, api_key를 모두 입력하세요.");return}
+  try{localStorage.setItem("eds_model",model);localStorage.setItem("eds_base",base)}catch(e){}
+  $("q").value="";add("u",q);hist.push({role:"user",content:q});
+  const wait=add("a","…");$("sb").disabled=true;
+  try{
+    const res=await fetch(base+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify({model,temperature:0,messages:[{role:"system",content:sysPrompt},...hist.slice(-10)]})});
+    const j=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(j.error?.message||("HTTP "+res.status));
+    const a=j.choices?.[0]?.message?.content;if(!a)throw new Error("응답 형식을 해석할 수 없습니다.");
+    wait.textContent=a;hist.push({role:"assistant",content:a});
+  }catch(err){wait.className="m e";wait.textContent="오류: "+err.message+" (base_url/CORS/키를 확인하세요)";hist.pop()}
+  finally{$("sb").disabled=false;$("msgs").scrollTop=1e9}
+});
+</script>
+</body>
+</html>
